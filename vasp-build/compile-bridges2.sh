@@ -13,4 +13,4 @@ mkdir $TMP
 ROOT=$TMP VASP_BINARY_PATH="/jet/home/ychiang4/.local/bin/" \
 INTERACTIVE_PATCH=patch.py \
 IPI_PATCH=patch_ipi.py \
-./compile_vasp.sh vasp.6.4.1.tgz makefile makefile.include
+./compile_vasp.sh vasp.6.4.0.tgz makefile makefile.include
