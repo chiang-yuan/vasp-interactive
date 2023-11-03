@@ -35,6 +35,13 @@ CUDA_AWARE_SUPPORT = .TRUE.
 
 ## Use
 
+### `srun`
+
+```shell
+srun -n ${SLURM_NTASKS:-4} -c ${SLURM_CPUS_PER_TASK:-64} -u /global/homes/c/cyrusyc/.local/bin/vasp_std
+```
+
+### `mpirun`
 
 ```shell
 module unload cray-mpich; module unload cray-libsci; module load openmpi; mpirun -np ${SLURM_CPUS_PER_TASK:-64} ~/gpu-bind.sh path/to/vasp_std
