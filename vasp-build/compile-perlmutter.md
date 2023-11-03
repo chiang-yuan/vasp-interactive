@@ -1,5 +1,7 @@
 
-# Compilation note on NERSC Perlmmuter
+# Use `VASP-Interactive` on NERSC Perlmmuter
+
+## Build
 
 Compiling on Perlmutter by following the instruction on NERSC documentation might lead to the following error:
 
@@ -19,7 +21,7 @@ To bypass this, follow the discussion in the [VASP forum](https://www.vasp.at/fo
 ! END INTERFACE
 ```
 
-and replace it (at line 194) 
+and replace line 194:
 
 ```fortran
 CUDA_AWARE_SUPPORT = MPIX_Query_cuda_support() == 1
@@ -31,4 +33,9 @@ with
 CUDA_AWARE_SUPPORT = .TRUE.
 ```
 
+## Use
 
+
+```shell
+module unload cray-mpich; module unload cray-libsci; module load openmpi; mpirun -np ${SLURM_CPUS_PER_TASK:-64} ~/gpu-bind.sh path/to/vasp_std
+```
