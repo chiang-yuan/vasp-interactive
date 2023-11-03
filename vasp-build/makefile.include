@@ -1,80 +1,111 @@
-# Default precompiler options
-CPP_OPTIONS = -DHOST=\"bridges2\" \
-              -DMPI -DMPI_BLOCK=8000 -Duse_collective \
-              -DscaLAPACK \
-              -DCACHE_SIZE=4000 \
-              -Davoidalloc \
-              -Dvasp6 \
-              -Duse_bse_te \
-              -Dtbdyn \
-              -Dfock_dblbuf \
-              -D_OPENMP \
-	      -DVASP2WANNIER90
+# Precompiler options
+CPP_OPTIONS= -DHOST=\"LinuxNV_CrayMPICH\" \
+             -DMPI -DMPI_BLOCK=8000 -Duse_collective \
+             -DscaLAPACK \
+             -DCACHE_SIZE=4000 \
+             -Davoidalloc \
+             -Dvasp6 \
+             -Duse_bse_te \
+             -Dtbdyn \
+             -Dqd_emulate \
+             -Dfock_dblbuf \
+             -D_OPENMP \
+             -D_OPENACC \
+             -DUSENCCL -DUSENCCLP2P \
+             -DVASP_HDF5 \
+             -DVASP2WANNIER90 \
+             -DDFTD4 \
+             -DPROFILING
+### Disabled for GPU build:
+#             -Dsysv \
+#             -DUSELIBXC \
+#             -Dlibbeef \
 
-CPP         = fpp -f_com=no -free -w0  $*$(FUFFIX) $*$(SUFFIX) $(CPP_OPTIONS)
+CPP        = nvfortran -Mpreprocess -Mfree -Mextend -E $(CPP_OPTIONS) $*$(FUFFIX)  > $*$(SUFFIX)
+FC         = ftn -mp -acc=gpu -gpu=cc80 -stdpar
+FCL        = ftn -v -mp -acc=gpu -gpu=cc80 -c++libs -stdpar
+FREE       = -Mfree
 
-FC          = mpiifort -qopenmp
-FCL         = mpiifort
+FFLAGS     = -Mbackslash -Mlarge_arrays
+OFLAG      = -fast
+DEBUG      = -Mfree -O0 -traceback
+OBJECTS    = fftmpiw.o fftmpi_map.o fftw3d.o fft3dlib.o
+LLIBS       = -cudalib=cublas,cusolver,cufft,nccl -cuda
 
-FREE        = -free -names lowercase
-
-FFLAGS      = -assume byterecl -w
-
-OFLAG       = -O2
-OFLAG_IN    = $(OFLAG)
-DEBUG       = -O0
-
-OBJECTS     = fftmpiw.o fftmpi_map.o fftw3d.o fft3dlib.o
-OBJECTS_O1 += fftw3d.o fftmpi.o fftmpiw.o
-OBJECTS_O2 += fft3dlib.o
+# Redefine the standard list of O1 and O2 objects
+SOURCE_O1  := pade_fit.o
+SOURCE_O2  := pead.o
 
 # For what used to be vasp.5.lib
 CPP_LIB     = $(CPP)
-FC_LIB      = $(FC)
-CC_LIB      = icc
+FC_LIB      = nvfortran
+CC_LIB      = nvc -w
 CFLAGS_LIB  = -O
-FFLAGS_LIB  = -O1
+FFLAGS_LIB  = -O1 -Mfixed
 FREE_LIB    = $(FREE)
-
 OBJECTS_LIB = linpack_double.o
 
 # For the parser library
-CXX_PARS    = icpc
-LLIBS       = -lstdc++
+CXX_PARS    = nvc++ --no_warnings
 
-##
-## Customize as of this point! Of course you may change the preceding
-## part of this file as well if you like, but it should rarely be
-## necessary ...
-##
+#######
 
-# When compiling on the target machine itself, change this to the
-# relevant target when cross-compiling for another architecture
-# VASP_TARGET_CPU ?= -xHOST
-VASP_TARGET_CPU = -march=core-avx2
-FFLAGS     += $(VASP_TARGET_CPU)
+# Specify your NV HPC-SDK installation (mandatory)
+NVROOT      =$(shell which nvfortran | awk -F /compilers/bin/nvfortran '{ print $$1 }')
 
-# Intel MKL (FFTW, BLAS, LAPACK, and scaLAPACK)
-# (Note: for Intel Parallel Studio's MKL use -mkl instead of -qmkl)
-FCL        += -mkl
-# MKLROOT    ?= /path/to/your/mkl/installation
-LLIBS      += -L$(MKLROOT)/lib/intel64 -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64
-INCS        =-I$(MKLROOT)/include/fftw
+# Software emulation of quadruple precision (mandatory)
+QD         ?= $(NVROOT)/compilers/extras/qd
+LLIBS      += -L$(QD)/lib -lqdmod -lqd -Wl,-rpath=$(QD)/lib
+INCS       += -I$(QD)/include/qd 
+LLIBS      += -L$(NVROOT)/math_libs/lib64 -Wl,-rpath=$(NVROOT)/math_libs/lib64
 
-# HDF5-support (optional but strongly recommended)
-#CPP_OPTIONS+= -DVASP_HDF5
-#HDF5_ROOT  ?= /path/to/your/hdf5/installation
-#LLIBS      += -L$(HDF5_ROOT)/lib -lhdf5_fortran
-#INCS       += -I$(HDF5_ROOT)/include
+# mandatory
+BLAS        = -lblas
+LAPACK      = -llapack
+SCALAPACK   = -L/global/cfs/cdirs/omp/local/scalapack-2.1.0/nvidia-22.5/milan -lscalapack 
+LLIBS      += $(SCALAPACK) $(LAPACK) $(BLAS)
 
-# For the VASP-2-Wannier90 interface (optional)
-#CPP_OPTIONS    += -DVASP2WANNIER90
-# WANNIER90_ROOT ?= /path/to/your/wannier90/installation
-WANNIER90_ROOT = /opt/packages/WANNIER90/wannier90-3.1.0
-LLIBS          += -L$(WANNIER90_ROOT)/lib -lwannier
+# use cray-fftw module for FFTs
+# optional packages:
 
-# For the fftlib library (hardly any benefit in combination with MKL's FFTs)
-FCL         = mpiifort fftlib.o -mkl
-CXX_FFTLIB  = icpc -qopenmp -std=c++11 -DFFTLIB_USE_MKL -DFFTLIB_THREADSAFE
-INCS_FFTLIB = -I./include -I$(MKLROOT)/include/fftw
-LIBS       += fftlib
+# NCCL (GPU builds only)
+LLIBS     += -L$(NCCL_DIR)/lib -Wl,-rpath=$(NCCL_DIR)/lib
+INCS      += -I$(NCCL_DIR)/include
+
+# HDF5 (vasp >6.2.0 only)
+LLIBS     += -L$(HDF5_ROOT)/lib -lhdf5_fortran
+INCS      += -I$(HDF5_ROOT)/include
+
+# fftlib (CPU builds only)
+#FCL        += fftlib.o
+#CXX_FFTLIB  = nvc++ -mp --no_warnings -std=c++11 -DFFTLIB_THREADSAFE
+#INCS_FFTLIB = -I./include -I$(FFTW_ROOT)/include
+#LIBS       += fftlib
+#LLIBS      += -ldl
+
+# PATH FOR PLUGIN BUILDS
+EXTLIBDIR   = $(CFS)/omp/local
+
+# wannier90
+WANNIER90_ROOT = /global/common/software/nersc/pm-2021q4/sw/wannier90/nvidia/lib
+LLIBS      += -L$(WANNIER90_ROOT) -lwannier
+
+# libbeef (CPU builds only)
+LIBBEEF_ROOT = $(EXTLIBDIR)/libbeef/2020-11-01/nvidia-22.5/milan/lib
+#LLIBS      += -L$(LIBBEEF_ROOT) -lbeef
+
+# libxc (CPU builds only)
+LIBXC_ROOT  = $(EXTLIBDIR)/libxc/6.0.0/nvidia-22.5/x86-milan
+#LLIBS      += -L$(LIBXC_ROOT)/lib -lxcf03 -lxc
+#INCS       += -I$(LIBXC_ROOT)/include
+
+# DFTD4
+DFTD4_ROOT  = $(EXTLIBDIR)/dft4/2022-10-13/nvidia-22.5/$(CRAY_CPU_TARGET)
+LLIBS      += $(DFTD4_ROOT)/lib64/libdftd4.a \
+              $(DFTD4_ROOT)/lib64/libmctc-lib.a \
+              $(DFTD4_ROOT)/lib64/libmulticharge.a
+INCS       += -I$(DFTD4_ROOT)/include \
+              -I$(DFTD4_ROOT)/include/dftd4/NVHPC-22.5.0 \
+              -I$(DFTD4_ROOT)/include/multicharge/NVHPC-22.5.0 \
+              -I$(DFTD4_ROOT)/include/mctc-lib/NVHPC-22.5.0
+

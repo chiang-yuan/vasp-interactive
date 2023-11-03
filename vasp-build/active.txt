@@ -1,0 +1,20 @@
+
+Currently Loaded Modules:
+  1) craype-x86-milan                        6) cpe/23.03                       11) Nsight-Systems/2022.2.1      16) cray-dsmml/0.2.2              21) [1;31mcray-mpich/8.1.25[0m               ([1;31mmpi[0m)
+  2) libfabric/1.15.2.0                      7) xalt/2.10.2                     12) cudatoolkit/11.7        ([1;31mg[0m)  17) [1;32mcray-libsci/23.02.1.1[0m ([1;32mmath[0m)  22) conda/Miniconda3-py311_23.5.2-0
+  3) craype-network-ofi                      8) [1;32mcray-fftw/3.3.10.3[0m      ([1;32mmath[0m)  13) craype-accel-nvidia80        18) [1;32mPrgEnv-nvidia/8.3.3[0m   ([1;32mcpe[0m)   23) evp-patch
+  4) xpmem/2.6.2-2.5_2.27__gd067c3f.shasta   9) nccl/2.15.5-ofi         ([1;34mE[0m)     14) gpu/1.0                      19) [1;34mnvidia/22.7[0m           ([1;31mg[0m,[1;34mc[0m)   24) [1;35mpython/3.11[0m                     ([1;35mdev[0m)
+  5) perftools-base/23.03.0                 10) Nsight-Compute/2022.1.1         15) [1;34mcraype/2.7.20[0m           ([1;34mc[0m)  20) [1;33mcray-hdf5/1.12.2.3[0m    ([1;33mio[0m)
+
+  Where:
+   [1;31mg[0m:     built for GPU
+   [1;31mmpi[0m:   MPI Providers
+   [1;32mcpe[0m:   Cray Programming Environment Modules
+   [1;32mmath[0m:  Mathematical libraries
+   [1;33mio[0m:    Input/output software
+   [1;34mE[0m:     Experimental
+   [1;34mc[0m:     Compiler
+   [1;35mdev[0m:   Development Tools and Programming Languages
+
+ 
+
